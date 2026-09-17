@@ -1,0 +1,41 @@
+[
+  {
+    "name": "daily-business-prospection",
+    "schedule": "0 9 * * *",
+    "description": "Prospection quotidienne B2B déléguée à OpenClaw (50 leads ciblés artisans/BTP)",
+    "command": "openclaw_execute",
+    "params": {
+      "command": "prospect",
+      "params": {
+        "sectors": ["btp", "menuisier", "electricien", "plombier", "artisan", "restauration"],
+        "region": "France",
+        "limit": 50
+      }
+    },
+    "deliver": "telegram"
+  },
+  {
+    "name": "weekly-content-generation",
+    "schedule": "0 10 * * 1",
+    "description": "Génération de contenu hebdomadaire B2B déléguée à OpenClaw",
+    "command": "openclaw_execute",
+    "params": {
+      "command": "content",
+      "params": {
+        "topic": "Actualité B2B, souveraineté numérique et RGPD pour artisans",
+        "platform": "linkedin"
+      }
+    },
+    "deliver": "telegram"
+  },
+  {
+    "name": "weekly-okr-sync",
+    "schedule": "0 8 * * 1",
+    "description": "Point d'étape hebdomadaire OKR et finances avec les agents OpenClaw",
+    "command": "openclaw_execute",
+    "params": {
+      "command": "status"
+    },
+    "deliver": "telegram"
+  }
+]
