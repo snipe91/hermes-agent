@@ -37,5 +37,15 @@
       "command": "status"
     },
     "deliver": "telegram"
+  },
+  {
+    "name": "weekly-strategic-report",
+    "schedule": "0 9 * * 1",
+    "description": "Rapport stratégique hebdomadaire Hermes 2.0 (Revue multi-business + Sagesse livres)",
+    "command": "strategic_business_planner",
+    "params": {
+      "mode": "review"
+    },
+    "deliver": "telegram"
   }
 ]
