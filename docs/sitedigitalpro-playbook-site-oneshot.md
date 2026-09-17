@@ -10,16 +10,16 @@
 ## PHASE 0 — AVANT DE CODER (les 10 minutes qui évitent 10 heures)
 
 ### 0.1 Comprendre le projet (ne jamais sauter)
-1. **Business en 1 phrase** : qui, quoi, pour qui, quelle promesse.
-2. **Marché / langues** : FR seule ? FR + Québec ? (→ bascule géo obligatoire si QC)
-3. **Pages** : accueil, forfaits/services, portfolio/réalisations, contact, à-propos, blog, + pages légales.
-4. **Funnel** : quel est l'objectif ? (devis, achat direct, appel) → chaque page doit pousser vers CE point.
-5. **CTA = zéro friction** : si vente de service → **lien de paiement direct (Stripe)** dès la page forfaits.
-   Ne jamais forcer un passage par un formulaire de contact pour un achat (abandon).
-6. **Ton validé avec le client** : confiant/factuel OU provocateur/urgence. Sur TPE FR = confiant,
-   zéro pression, zéro fausse promesse. Le "marketage" agressif rebute les artisans.
-7. **Conformité** : RGPD (FR) / Loi 25 (QC) = cadre clair, pas une menace. Exactitude des chiffres
-   (35 points RGPD ≠ 22 points Loi 25 ; amendes, délais 72h CNIL/CAI).
+1. **Business en 1 phrase** : qui on aide, quel problème concret on résout, quels livrables précis, comment on prouve la qualité.
+2. **Marché / Localisation** : France seule ou France + Québec ? (→ sélecteur de région visible prioritaire sur l'IP).
+3. **Pages** : accueil, forfaits/services, portfolio/réalisations, contact, à-propos, blog, pages légales.
+4. **Funnel & Objectif** : clarifier la proposition de valeur métier en premier lieu, avec l'option de paiement échelonné en facilitateur.
+5. **CTA & Conversion équilibrée** : 
+   - Achat direct (Stripe) pour les forfaits packagés à périmètre clair.
+   - Voie de contact/échange facultative (audit gratuit, appel court) pour les projets nécessitant un cadrage préalable.
+   - Ne pas faire du formulaire une étape obligatoire pour un achat immédiat, mais afficher les livrables et conditions avant le paiement.
+6. **Ton validé avec le client** : confiant, factuel et bienveillant. Zéro pression, zéro fausse urgence, zéro promesse irréaliste.
+7. **Conformité & Clarté** : RGPD (FR) / Loi 25 (QC) = cadre légal clair, pas une menace alarmiste. Exactitude des chiffres sourcés.
 
 ### 0.2 Design system AVANT tout code
 Définir AVANT d'écrire une ligne :
@@ -35,17 +35,16 @@ Définir AVANT d'écrire une ligne :
 ## PHASE 1 — ARCHITECTURE DE LA PAGE (structure gagnante)
 
 ### 1.1 Les sections d'une landing service (ordre éprouvé)
-1. **Hero plein écran** : badge/eyebrow + H1 (promesse) + sous-titre (clarifie) + 2 CTA
-   (primaire bleu = achat/forfaits, secondaire = contact/audit) + 3 points de réassurance
-   (✓ paiement 12× · ✓ rapport · ✓ accompagnement).
-2. **Preuve de besoin** (factuel) : chiffres sourcés, cadre légal clair.
+1. **Hero plein écran** : badge/eyebrow + H1 (proposition de valeur métier) + sous-titre (bénéfice concret) + 2 CTA
+   (primaire = réserver / forfaits, secondaire = voir les réalisations) + 3 points de réassurance
+   (✓ livrables clairs · ✓ accompagnement dédié · ✓ étalement en 12 mensualités).
+2. **Preuve de besoin** (factuel) : chiffres sourcés, cadre légal sans dramatisation.
 3. **Comparatif** : "le site bricolé ✗ vs fait proprement ✓" (argument de vente clé).
-4. **Ce qu'on livre** : 3-4 cartes bénéfices.
-5. **Forfaits/Prix** : cartes avec prix + mensualités + **2 CTA Stripe** (1× / 12×).
-   Plus un bandeau "urgence" pleine largeur différencié (rouge).
-6. **Crédibilité / Pourquoi nous** (E-E-A-T) : expertise, preuves.
-7. **Processus** : 3-4 étapes numérotées.
-8. **CTA final** : récap + double CTA + rappel garantie.
+4. **Ce qu'on livre** : 3-4 cartes bénéfices orientées résultat.
+5. **Forfaits/Prix** : cartes transparentes avec prix total, échéancier exact (12 × 207,50 €), taxes et liens d'action (1× / 12×).
+6. **Crédibilité / Pourquoi nous** (E-E-A-T) : expertise, preuves vérifiables.
+7. **Processus** : 3-4 étapes numérotées simples.
+8. **CTA final** : récapitulatif des livrables + contact / appel de cadrage.
 
 ### 1.2 Structure des titres (SEO) — AUCUN saut
 - 1 seul **H1** (le hero). Les H2 = sections. H3 = sous-blocs. H4 = titres footer/colonnes.
@@ -114,55 +113,37 @@ désactivé si `prefers-reduced-motion`, particules off sur `pointer: coarse` (m
 3. Canvas/particules : **pause hors viewport**, off sur mobile tactile.
 4. IntersectionObserver + `requestAnimationFrame` (jamais setInterval).
 
-### 3.2 Scroll reveal GSAP — TOUJOURS le fallback anti-bug
-Le scroll-reveal masque les éléments (`opacity:0`) puis les révèle au scroll. **BUG fréquent** :
-éléments jamais révélés (ScrollTrigger ne se déclenche pas après cache/layout) → page avec des
-sections invisibles. **Ajouter systématiquement** :
-```js
-setTimeout(function(){
-  gsap.utils.toArray('.sdp-reveal-up').forEach(function(el){
-    if (getComputedStyle(el).opacity === '0') { gsap.set(el, {opacity:1, y:0}); ScrollTrigger.refresh(); }
-  });
-}, 2500);
-```
+### 3.2 Rendu & Animations — Contenu visible par défaut (Règle d'or CWV)
+Le contenu HTML **DOIT être visible par défaut** dès le premier affichage (`opacity: 1; transform: none;`).
+L'animation ne doit être qu'une **amélioration progressive** appliquée uniquement lorsque les scripts et observateurs sont prêts.
+- **Règle stricte** : Ne jamais masquer le contenu en inline ou en CSS initial (`opacity: 0`) dans l'espoir qu'un script ou un timer de secours (`setTimeout(..., 2500)`) vienne l'afficher. Si le script échoue, est bloqué ou tarde, la page reste vide pour le visiteur et détruit le LCP/FCP.
+- Le premier écran (above-the-fold) ne doit attendre **aucune animation** pour être lisible.
+- La stabilité visuelle (CLS < 0,1) et la vitesse du LCP priment sur tous les effets cosmétiques.
 
-### 3.3 Les effets qui "vendent" (validés)
-- **Hero** : entrée en cascade (eyebrow → H1 → sous-titre → boutons) en timeline GSAP.
-- **Boutons** : hover lift + glow + shine.
+### 3.3 Les effets qui valorisent l'expérience (validés)
+- **Hero** : transition subtile et non bloquante.
+- **Boutons** : hover lift + glow doux.
 - **Cartes** : hover lift + bordure qui s'illumine.
-- **Particules** : constellation (liens entre particules proches) — l'effet "réseau".
-- **Aurora** : halo bleu animé lentement (26s).
-- **Count-up** des chiffres clés au scroll (IntersectionObserver).
+- **Particules & Aurora** : Canvas/CSS d'arrière-plan uniquement en amélioration visuelle, paused hors viewport, off sur mobile.
 - Voir `references/animation-techniques-premium.md` pour les recettes complètes.
 
 ---
 
-## PHASE 4 — BILINGUE FR/QC + GÉO (si marché Québec)
+## PHASE 4 — LOCALISATION RÉGIONALE (France & Québec)
 
-### 4.1 Mécanisme
-```html
-<span data-geo="fr">Texte français</span>
-<span data-geo="qc" hidden>Texte québécois</span>
-```
-```css
-#app [data-geo="qc"] { display:none }
-html[data-geo="qc"] #app [data-geo="qc"] { display:inline }
-html[data-geo="qc"] #app [data-geo="fr"] { display:none }
-```
-```js
-// géo-IP : ipwho.is + sessionStorage + fallback FR + timeout 2.5s abort
-```
-- **Title/meta dynamiques** par géo dans `applyGeo()`.
-- **Devise même chiffre** (2490 € = 2490 $ CA) — pas de conversion de taux.
+### 4.1 Sélecteur explicite vs Détection aveugle
+- **Le choix explicite prime** : Proposer un sélecteur visible "France / Québec" dans le header et le footer.
+- **Pages d'entrée régionales stables** : S'appuyer sur `/agence-web-france/` et `/agence-web-quebec/` comme piliers avec offres et devises natives.
+- **Limites de la géo-IP** : Ne pas dépendre d'un appel tiers navigateur (`ipwho.is`) pour modifier silencieusement des prix ou masquer des textes. La géo-IP peut uniquement suggérer un marché, jamais forcer une bascule de prix non consentie (risque de CLS, erreurs VPN et fuite de l'IP visiteur).
+- **Règle no-JS & Accessibilité** : Chaque page doit rester 100% compréhensible, accessible et achetable sans JavaScript activé.
 
-### 4.2 Adapter par géo (pas juste traduire)
-- FR : RGPD, CNIL, "12 mensualités", "artisans français".
-- QC : Loi 25, CAI, "12 versements", "PME québécoises".
-- Grilles de contrôle : 35 points RGPD / 22 points Loi 25.
+### 4.2 Adaptation réelle par marché (pas une simple traduction)
+- **France** : Cadre RGPD, CNIL, TVA applicable, étalement en 12 mensualités.
+- **Québec** : Cadre Loi 25, CAI, taxes provinciales/fédérales (TPS/TVQ), étalement en 12 versements.
+- **Tarifs distincts** : 2 490 € et 2 490 CAD sont deux décisions tarifaires distinctes justifiées par la structure de coûts, les frais Stripe et la fiscalité locale (et non une équivalence monétaire naïve).
 
-### 4.3 ⚠️ Crawlers SEO et data-geo
-Les crawlers **voient les 2 versions** (spans cachés dans le HTML) → ils détectent de **faux mots
-concaténés** ("RGPD,pensé", "métieret"). Le H1 réel est propre. **Ne pas "corriger" ces faux positifs.**
+### 4.3 Sémantique & Crawlers
+- Veiller à ce que l'arbre d'accessibilité et le balisage Schema.org correspondent fidèlement au marché ciblé sans générer d'ambiguïté pour les robots d'indexation.
 
 ---
 
@@ -241,31 +222,35 @@ document.querySelectorAll('[data-stripe-eur]').forEach(a => {
 - **Abonnements** : `-d "recurring[interval]=month"` SÉPARÉ (concaténer dans un seul -d → erreur).
 - Redirection après paiement : `after_completion[redirect][url]=/contact/?paid=ok`.
 
-### 7.2 UX paiement
-- Le CTA d'un forfait = **payer direct**, pas un formulaire (abandon sinon).
-- Les questions (projet, contenu) se posent APRÈS le paiement, pas avant.
+### 7.2 UX paiement & Réassurance
+- Le CTA d'un forfait permet **l'achat direct**, sans imposer de formulaire pour les clients prêts à commander.
+- Prévoir obligatoirement une **voie d'échange facultative** (bouton "Poser une question" ou "Réserver un appel de cadrage de 15 min") pour les prospects ayant un doute sur l'éligibilité de leur projet.
+- **Transparence avant Stripe** : afficher clairement les livrables inclus, les éventuelles exclusions, les éléments à fournir par le client, le calendrier estimé et les conditions de propriété du site.
+- **Séquence de relance CRM (n8n)** : stopper ou adapter la séquence dès qu'un prospect répond, prend rendez-vous, achète ou se désinscrit.
 
 ---
 
 ## PHASE 8 — ACCESSIBILITÉ + SEO (vérifs finales)
 
 ### 8.1 Accessibilité checklist
-- [ ] Contrastes ≥4.5:1 (texte normal), ≥3:1 (grand/gras). CALCULER.
-- [ ] Zones tactiles ≥44px (loi de Fitts) — boutons, liens nav.
+- [ ] Contenu lisible et complet sans JavaScript (amélioration progressive).
+- [ ] Contrastes ≥ 4.5:1 (texte normal), ≥ 3:1 (grand/gras). CALCULER.
+- [ ] Zones tactiles ≥ 44px (loi de Fitts) — boutons, liens nav.
 - [ ] `prefers-reduced-motion` respecté.
-- [ ] 1 seul H1, hiérarchie sans saut.
-- [ ] Labels de formulaire visibles (`#e2e8f0`, pas gris moyen).
-- [ ] Alt descriptifs sur images (pas "image").
-- [ ] CTA avec `role="button"` + `aria-label` (crawlers CRO + lecteurs).
+- [ ] 1 seul H1, hiérarchie sémantique cohérente sans saut artificiel.
+- [ ] Labels de formulaire visibles (`#e2e8f0`, pas de gris illisible).
+- [ ] Alt descriptifs sur les images de contenu.
+- [ ] CTA : `aria-label` descriptif sur les liens d'action, SANS `role="button"` forcé sur les balises `<a>`.
+- [ ] Menu mobile doté de `hidden` / `inert` et `aria-controls` quand fermé (aucun lien tabbable hors écran).
 - [ ] Zéro overflow horizontal (test mobile 390px).
 
 ### 8.2 SEO/GEO
-- Title 50-60 chars, meta 140-160, par géo.
-- `llms.txt` (guide les IA), sitemap, robots propre (IA autorisées).
-- Schema JSON-LD (Organization, Service, FAQ si applicable).
-- **Formats Q&R explicites** (Quoi/Comment/Pourquoi) pour le GEO (+3 pts IA).
-- Images WebP/AVIF compressées (LCP).
-- Éviter 28+ CSS inline / 28+ scripts bloquants si possible (LCP mobile).
+- Title < 60 caractères, meta-description 140-160 par marché.
+- Fichier `/llms.txt`, sitemap propre, robots.txt autorisant les moteurs légitimes.
+- Schéma JSON-LD canonique `#organisation` avec `WebSite.publisher` et fondateur séparé en `Person`.
+- Formats Q&R structurés (Quoi/Comment/Pourquoi) et faits sourcés.
+- Images WebP/AVIF avec dimensions HTML `width` et `height` (stabilité CLS et vitesse LCP).
+- Aucun contenu bloqué derrière une animation non chargée.
 
 ---
 

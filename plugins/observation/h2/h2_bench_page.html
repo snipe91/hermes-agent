@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>H2.0 — banc de test de perception</title>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; padding: 24px; max-width: 900px; }
+    section { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin: 12px 0; }
+    h2 { font-size: 14px; margin: 0 0 8px; color: #555; }
+    button { font-size: 15px; padding: 8px 14px; margin: 4px; cursor: pointer; }
+    #scenario-j-box { width: 120px; height: 60px; background: #e0e0e0; }
+    #lazy { min-height: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Banc de test H2.0</h1>
+
+  <section id="A"><h2>A — clic simple</h2>
+    <button id="a-btn" type="button">Bouton simple</button>
+    <p id="a-out">en attente</p>
+  </section>
+
+  <section id="B"><h2>B — menu dynamique (rendu JS)</h2>
+    <button id="b-btn" type="button">Ouvrir le menu</button>
+    <ul id="b-menu"></ul>
+  </section>
+
+  <section id="C"><h2>C — modal</h2>
+    <button id="c-btn" type="button">Afficher le modal</button>
+    <div id="c-host"></div>
+  </section>
+
+  <section id="D"><h2>D — overlay</h2>
+    <button id="d-btn" type="button">Afficher un bandeau</button>
+    <div id="d-host"></div>
+  </section>
+
+  <section id="E"><h2>E — changement DOM sans navigation</h2>
+    <button id="e-btn" type="button">Ajouter un élément</button>
+    <div id="e-list"></div>
+  </section>
+
+  <section id="F"><h2>F — navigation interne</h2>
+    <button id="f-btn" type="button">Aller à la section G</button>
+  </section>
+
+  <section id="G"><h2>G — bouton inerte (aucun changement)</h2>
+    <p>Ce bouton ne fait rien volontairement.</p>
+    <button id="g-btn" type="button">Ne rien faire</button>
+  </section>
+
+  <section id="H"><h2>H — élément dynamique (apparaît après 1,2 s)</h2>
+    <button id="h-btn" type="button">Charger l'élément</button>
+    <div id="lazy"></div>
+  </section>
+
+  <section id="I"><h2>I — action lente (état de chargement 1,5 s)</h2>
+    <button id="i-btn" type="button">Lancer l'action lente</button>
+    <p id="i-out">prêt</p>
+  </section>
+
+  <section id="J"><h2>J — résultat visuel seul (couleur)</h2>
+    <button id="j-btn" type="button">Changer la couleur</button>
+    <div id="scenario-j-box"></div>
+  </section>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    $('a-btn').addEventListener('click', () => { $('a-out').textContent = 'clic enregistré'; });
+
+    $('b-btn').addEventListener('click', () => {
+      const ul = $('b-menu');
+      ul.innerHTML = '';
+      ['Option un', 'Option deux', 'Option trois'].forEach((label) => {
+        const li = document.createElement('li');
+        li.textContent = label;
+        ul.appendChild(li);
+      });
+    });
+
+    $('c-btn').addEventListener('click', () => {
+      const host = $('c-host');
+      // Toggle: a modal that stays open swallows every later click, which made
+      // the bench page report "nothing changed" for all subsequent cases.
+      if (host.querySelector('[role="dialog"]')) {
+        host.innerHTML = '';
+        return;
+      }
+      const modal = document.createElement('div');
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', 'Confirmation');
+      modal.textContent = 'Voulez-vous continuer ?';
+      const ok = document.createElement('button');
+      ok.textContent = 'Oui';
+      modal.appendChild(ok);
+      host.appendChild(modal);
+    });
+
+    $('d-btn').addEventListener('click', () => {
+      const host = $('d-host');
+      host.innerHTML = '';
+      const banner = document.createElement('div');
+      banner.setAttribute('role', 'alert');
+      banner.textContent = "Bandeau d'information — vous pouvez fermer ce message.";
+      host.appendChild(banner);
+    });
+
+    $('e-btn').addEventListener('click', () => {
+      const n = document.querySelectorAll('#e-list .item').length + 1;
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.textContent = 'Élément ' + n;
+      $('e-list').appendChild(item);
+    });
+
+    $('f-btn').addEventListener('click', () => {
+      $('G').scrollIntoView({ behavior: 'instant', block: 'center' });
+    });
+
+    $('g-btn').addEventListener('click', () => { /* volontairement inerte */ });
+
+    $('h-btn').addEventListener('click', () => {
+      const lazy = $('lazy');
+      lazy.textContent = '';
+      setTimeout(() => {
+        const p = document.createElement('p');
+        p.textContent = 'Contenu chargé dynamiquement.';
+        lazy.appendChild(p);
+      }, 1200);
+    });
+
+    $('i-btn').addEventListener('click', () => {
+      const out = $('i-out');
+      out.textContent = 'Chargement en cours…';
+      setTimeout(() => { out.textContent = 'Action terminée'; }, 1500);
+    });
+
+    $('j-btn').addEventListener('click', () => {
+      const box = $('scenario-j-box');
+      const next = box.style.background === 'rgb(46, 125, 50)';
+      box.style.background = next ? '#e0e0e0' : '#2e7d32';
+    });
+  </script>
+</body>
+</html>

@@ -47,8 +47,21 @@ def test_click_still_runs_when_current_page_is_public(monkeypatch):
     monkeypatch.setattr(browser_tool, "_eval_ssrf_guard_active", lambda task_id: True)
     monkeypatch.setattr(browser_tool, "_current_page_private_url", lambda task_id: None)
 
-    def fake_run(task_id, command, args):
-        calls.append((task_id, command, args))
+    def fake_run(task_id, command, args=None, **kwargs):
+        calls.append((task_id, command, tuple(args or [])))
+        # Chrome path (engine "auto") issues ONE batch of scrollintoview + click.
+        if command == "batch":
+            cmds = json.loads(kwargs.get("stdin_data") or "[]")
+            target = cmds[1][1] if len(cmds) > 1 else "@?"
+            return {
+                "success": True,
+                "data": {"results": [
+                    {"command": ["scrollintoview", target], "success": True,
+                     "error": None, "result": None},
+                    {"command": ["click", target], "success": True,
+                     "error": None, "result": {"clicked": target}},
+                ]},
+            }
         return {"success": True}
 
     monkeypatch.setattr(browser_tool, "_run_browser_command", fake_run)
@@ -56,7 +69,7 @@ def test_click_still_runs_when_current_page_is_public(monkeypatch):
     out = json.loads(browser_tool.browser_click("e1", task_id="task-1"))
 
     assert out == {"success": True, "clicked": "@e1"}
-    assert calls == [("task-1", "click", ["@e1"])]
+    assert calls == [("task-1", "batch", ())]
 
 
 def test_guard_inactive_does_not_block_or_probe(monkeypatch):
@@ -73,8 +86,21 @@ def test_guard_inactive_does_not_block_or_probe(monkeypatch):
 
     monkeypatch.setattr(browser_tool, "_current_page_private_url", fail_probe)
 
-    def fake_run(task_id, command, args):
-        calls.append((task_id, command, args))
+    def fake_run(task_id, command, args=None, **kwargs):
+        calls.append((task_id, command, tuple(args or [])))
+        # Chrome path (engine "auto") issues ONE batch of scrollintoview + click.
+        if command == "batch":
+            cmds = json.loads(kwargs.get("stdin_data") or "[]")
+            target = cmds[1][1] if len(cmds) > 1 else "@?"
+            return {
+                "success": True,
+                "data": {"results": [
+                    {"command": ["scrollintoview", target], "success": True,
+                     "error": None, "result": None},
+                    {"command": ["click", target], "success": True,
+                     "error": None, "result": {"clicked": target}},
+                ]},
+            }
         return {"success": True}
 
     monkeypatch.setattr(browser_tool, "_run_browser_command", fake_run)
@@ -82,7 +108,7 @@ def test_guard_inactive_does_not_block_or_probe(monkeypatch):
     out = json.loads(browser_tool.browser_click("@e1", task_id="task-1"))
 
     assert out == {"success": True, "clicked": "@e1"}
-    assert calls == [("task-1", "click", ["@e1"])]
+    assert calls == [("task-1", "batch", ())]
 
 
 def test_camofox_short_circuits_before_guard(monkeypatch):

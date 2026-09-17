@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>H2.0 — banc A→J non idempotent</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; padding: 20px; max-width: 960px; }
+  section { border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin: 10px 0; }
+  h2 { font-size: 13px; margin: 0 0 6px; color: #555; }
+  button { font-size: 14px; padding: 7px 12px; margin: 3px; cursor: pointer; }
+  .tick { font-variant-numeric: tabular-nums; color: #b00; font-weight: 600; }
+  #j-box { width: 100px; height: 40px; background: #e0e0e0; transition: none; }
+</style>
+</head>
+<body>
+<h1>Banc non idempotent</h1>
+<p>Chaque clic modifie réellement l'état. Aucune action n'est répétable à l'identique.</p>
+
+<section><h2>A — texte compteur (nœud texte pur)</h2>
+  <button id="a-btn" type="button">Incrémenter A</button>
+  <p id="a-out">compteur A = <span class="tick" id="a-n">0</span></p>
+</section>
+
+<section><h2>B — menu React-like (append, jamais identique)</h2>
+  <button id="b-btn" type="button">Ajouter au menu</button>
+  <ul id="b-menu"></ul>
+</section>
+
+<section><h2>C — modal (toggle + compteur interne)</h2>
+  <button id="c-btn" type="button">Basculer le modal</button>
+  <div id="c-host"></div>
+</section>
+
+<section><h2>D — overlay role=alert (toggle + compteur)</h2>
+  <button id="d-btn" type="button">Basculer le bandeau</button>
+  <div id="d-host"></div>
+</section>
+
+<section><h2>E — mutation DOM (append non répétable)</h2>
+  <button id="e-btn" type="button">Ajouter un élément</button>
+  <div id="e-list"></div>
+</section>
+
+<section><h2>F — navigation (hash change)</h2>
+  <button id="f-btn" type="button">Avancer le hash</button>
+  <p id="f-out">hash = <span class="tick" id="f-n">0</span></p>
+</section>
+
+<section><h2>G — statut (texte seul, aucun élément ajouté)</h2>
+  <button id="g-btn" type="button">Changer le statut</button>
+  <p id="g-out">statut initial</p>
+</section>
+
+<section><h2>H — mutation différée (800 ms)</h2>
+  <button id="h-btn" type="button">Planifier un ajout</button>
+  <div id="h-out"></div>
+</section>
+
+<section><h2>I — état de chargement puis fin (1,2 s)</h2>
+  <button id="i-btn" type="button">Lancer une action lente</button>
+  <p id="i-out">prêt</p>
+</section>
+
+<section><h2>J — visuel seul (couleur, aucun changement de DOM)</h2>
+  <button id="j-btn" type="button">Changer la couleur</button>
+  <div id="j-box"></div>
+</section>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let modalOpen = false, overlayOpen = false, hue = 0;
+
+  $('a-btn').addEventListener('click', () => {
+    $('a-n').textContent = String(Number($('a-n').textContent) + 1);
+  });
+
+  $('b-btn').addEventListener('click', () => {
+    const n = $('b-menu').children.length + 1;
+    const li = document.createElement('li');
+    li.textContent = 'Entrée ' + n;
+    $('b-menu').appendChild(li);
+  });
+
+  $('c-btn').addEventListener('click', () => {
+    modalOpen = !modalOpen;
+    const host = $('c-host');
+    host.innerHTML = '';
+    if (modalOpen) {
+      const m = document.createElement('div');
+      m.setAttribute('role', 'dialog');
+      m.setAttribute('aria-modal', 'true');
+      m.setAttribute('aria-label', 'Confirmation');
+      m.textContent = 'Modal ouvert (fois ' + (window.__cCount = (window.__cCount || 0) + 1) + ')';
+      host.appendChild(m);
+    }
+  });
+
+  $('d-btn').addEventListener('click', () => {
+    overlayOpen = !overlayOpen;
+    const host = $('d-host');
+    host.innerHTML = '';
+    if (overlayOpen) {
+      const b = document.createElement('div');
+      b.setAttribute('role', 'alert');
+      b.textContent = 'Bandeau actif (fois ' + (window.__dCount = (window.__dCount || 0) + 1) + ')';
+      host.appendChild(b);
+    }
+  });
+
+  $('e-btn').addEventListener('click', () => {
+    const n = document.querySelectorAll('#e-list .item').length + 1;
+    const d = document.createElement('div');
+    d.className = 'item';
+    d.textContent = 'Item ' + n;
+    $('e-list').appendChild(d);
+  });
+
+  $('f-btn').addEventListener('click', () => {
+    const n = Number($('f-n').textContent) + 1;
+    $('f-n').textContent = String(n);
+    location.hash = 'step-' + n;
+  });
+
+  $('g-btn').addEventListener('click', () => {
+    $('g-out').textContent = 'statut modifié à ' + new Date().toISOString().slice(11, 23);
+  });
+
+  $('h-btn').addEventListener('click', () => {
+    const n = $('h-out').children.length + 1;
+    setTimeout(() => {
+      const p = document.createElement('p');
+      p.textContent = 'Ajout différé ' + n;
+      $('h-out').appendChild(p);
+    }, 800);
+  });
+
+  $('i-btn').addEventListener('click', () => {
+    $('i-out').textContent = 'chargement…';
+    setTimeout(() => { $('i-out').textContent = 'terminé'; }, 1200);
+  });
+
+  $('j-btn').addEventListener('click', () => {
+    hue = (hue + 47) % 360;
+    $('j-box').style.background = 'hsl(' + hue + ', 70%, 45%)';
+  });
+</script>
+</body>
+</html>

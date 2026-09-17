@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>H2.0-008 — banc clic minimal</title>
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { font-family: monospace; }
+  #pad { height: 4000px; background: repeating-linear-gradient(#fff 0 19px, #eee 19px 20px); }
+  #strip {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: #111; color: #0f0; padding: 4px 8px; font-size: 12px; z-index: 9999;
+  }
+  .btn {
+    display: block; width: 260px; margin: 18px 0 18px 20px;
+    padding: 10px; font-size: 15px; cursor: pointer;
+    border: 2px solid #333; background: #f7f7f7;
+  }
+  #tail { height: 1200px; }
+</style>
+</head>
+<body>
+<div id="strip">banc clic minimal — <span id="strip-status">prêt</span></div>
+
+<h1 style="margin:70px 0 0 20px;font-size:16px">H2.0-008 — clic bench</h1>
+
+<button class="btn" id="b1">Bouton 1</button>
+<button class="btn" id="b2">Bouton 2</button>
+<button class="btn" id="b3">Bouton 3</button>
+<button class="btn" id="b4">Bouton 4</button>
+<button class="btn" id="b5">Bouton 5</button>
+<button class="btn" id="b6">Bouton 6</button>
+<button class="btn" id="b7">Bouton 7</button>
+<button class="btn" id="b8">Bouton 8</button>
+<button class="btn" id="b9">Bouton 9</button>
+<button class="btn" id="b10">Bouton 10</button>
+
+<div id="pad"></div>
+<div id="tail"></div>
+
+<script>
+  // Ground truth durable : tout clic qui atteint reellement la page est enregistre
+  // dans window.__hits, avec l'id de la cible et le compteur par bouton.
+  window.__hits = [];
+  window.__counts = {};
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var id = t && t.id ? t.id : (t && t.tagName ? t.tagName : '?');
+    window.__hits.push(id);
+    window.__counts[id] = (window.__counts[id] || 0) + 1;
+    document.getElementById('strip-status').textContent =
+      'clics reçus : ' + window.__hits.length + ' (' + id + ')';
+  }, true);   // capture phase : on voit le clic meme si un handler l'annule
+
+  // Utilitaires exposes a la mesure.
+  window.__probe = function (sel) {
+    var el = document.querySelector(sel);
+    if (!el) return JSON.stringify({ found: false });
+    var r = el.getBoundingClientRect();
+    var cs = getComputedStyle(el);
+    var cx = Math.round(r.left + r.width / 2);
+    var cy = Math.round(r.top + r.height / 2);
+    var inViewport = cy >= 0 && cy <= innerHeight && cx >= 0 && cx <= innerWidth;
+    var atPoint = null;
+    try {
+      var top = document.elementFromPoint(Math.max(0, Math.min(cx, innerWidth - 1)),
+                                          Math.max(0, Math.min(cy, innerHeight - 1)));
+      atPoint = top ? (top.id || top.tagName) : null;
+    } catch (err) { atPoint = 'ERR ' + err.name; }
+    return JSON.stringify({
+      found: true,
+      rect: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) },
+      center: { x: cx, y: cy },
+      viewport: { w: innerWidth, h: innerHeight },
+      scroll: { x: Math.round(scrollX), y: Math.round(scrollY) },
+      inViewport: inViewport,
+      elementFromPoint: atPoint,
+      display: cs.display,
+      visibility: cs.visibility,
+      pointerEvents: cs.pointerEvents,
+      docHeight: document.documentElement.scrollHeight
+    });
+  };
+
+  window.__reset = function () {
+    window.__hits = []; window.__counts = {};
+    document.getElementById('strip-status').textContent = 'prêt';
+    return 'ok';
+  };
+</script>
+</body>
+</html>

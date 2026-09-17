@@ -389,7 +389,12 @@ class TestLightpandaFallbackWarning:
             "Lightpanda 'click' failed (timeout); retried with Chrome.",
         )
         bt._last_active_session_key["warn-test3"] = "warn-test3"
-        with patch("tools.browser_tool._run_browser_command", return_value=result):
+        # The Lightpanda→Chrome fallback applies PER COMMAND, so browser_click
+        # keeps the two-call path under Lightpanda. Pin the engine explicitly:
+        # without this, browser_click would take the Chrome batch path (engine
+        # "auto") and the fallback contract would silently stop being covered.
+        with patch("tools.browser_tool._run_browser_command", return_value=result), \
+                patch("tools.browser_tool._get_browser_engine", return_value="lightpanda"):
             response = json.loads(bt.browser_click("@e1", task_id="warn-test3"))
 
         assert response["success"] is False

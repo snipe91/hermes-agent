@@ -2353,6 +2353,7 @@ def _run_browser_command(
     args: List[str] = None,
     timeout: Optional[int] = None,
     _engine_override: Optional[str] = None,
+    stdin_data: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Run an agent-browser CLI command using our pre-created Browserbase session.
@@ -2540,10 +2541,19 @@ def _run_browser_command(
                 cmd_parts,
                 stdout=stdout_fd,
                 stderr=stderr_fd,
-                stdin=subprocess.DEVNULL,
+                stdin=subprocess.PIPE if stdin_data is not None else subprocess.DEVNULL,
                 env=browser_env,
                 **_popen_extra,
             )
+            if stdin_data is not None and proc.stdin is not None:
+                # `batch` reads its command array from stdin. Best-effort: a
+                # short-lived CLI may close the pipe first, and that must not
+                # turn a normal result into an exception.
+                try:
+                    proc.stdin.write(stdin_data.encode("utf-8"))
+                    proc.stdin.close()
+                except Exception as exc:
+                    logger.debug("browser '%s': could not write stdin: %s", command, exc)
         finally:
             os.close(stdout_fd)
             os.close(stderr_fd)
@@ -2598,6 +2608,22 @@ def _run_browser_command(
             elif stdout_text:
                 try:
                     parsed = json.loads(stdout_text)
+                    # `batch` returns a JSON ARRAY — one object per command —
+                    # instead of the usual {"success","data","error"} dict.
+                    # Normalise it so the dict contract every caller relies on
+                    # still holds. Deliberately keyed off the command name and
+                    # not off the payload type: a JSON list returned by any
+                    # other command passes through untouched, so no implicit
+                    # "a list means batch" convention is created for the future.
+                    if command == "batch" and isinstance(parsed, list):
+                        parsed = {
+                            "success": all(
+                                bool(c.get("success"))
+                                for c in parsed
+                                if isinstance(c, dict)
+                            ),
+                            "data": {"results": parsed},
+                        }
                     # Warn if snapshot came back empty (common sign of daemon/CDP issues)
                     if command == "snapshot" and parsed.get("success"):
                         snap_data = parsed.get("data", {})
@@ -3183,7 +3209,11 @@ def browser_click(ref: str, task_id: Optional[str] = None) -> str:
     Click on an element.
 
     Args:
-        ref: Element reference (e.g., "@e5")
+        ref: Element reference (e.g., "@e5"), or a bare ref such as "e5" which
+             is prefixed with "@" automatically. **Refs only.** A CSS selector
+             (e.g., "#submit") is NOT supported here: it would be turned into
+             "@#submit", which no backend can resolve. Callers that need a CSS
+             selector must go through the backend directly.
         task_id: Task identifier for session isolation
 
     Returns:
@@ -3198,11 +3228,86 @@ def browser_click(ref: str, task_id: Optional[str] = None) -> str:
     if blocked is not None:
         return blocked
 
-    # Ensure ref starts with @
+    # Ensure ref starts with @ (refs only — see the docstring above)
     if not ref.startswith("@"):
         ref = f"@{ref}"
 
-    result = _run_browser_command(effective_task_id, "click", [ref])
+    # Engine branch. Resolved with the SAME call _run_browser_command() uses,
+    # so the two can never disagree about which engine is in play.
+    #
+    # Lightpanda keeps the historical two-invocation path: it is the only engine
+    # eligible for the automatic Chrome fallback, which _run_browser_command
+    # applies per command. Batching would fold both operations into a command
+    # name ("batch") that is not fallback-eligible, silently dropping the
+    # fallback and its user-visible warning.
+    #
+    # Chrome — engine "auto" (agent-browser's default) or an explicit "chrome" —
+    # gets both steps in ONE invocation.
+    engine = _get_browser_engine()
+
+    if engine == "lightpanda":
+        # Historical path, byte-for-byte. Best-effort scroll: its failure is
+        # logged and never becomes the click's result.
+        try:
+            _run_browser_command(effective_task_id, "scrollintoview", [ref], timeout=15)
+        except Exception as exc:
+            logger.debug("browser_click: scrollintoview failed for %s: %s", ref, exc)
+
+        result = _run_browser_command(effective_task_id, "click", [ref])
+
+        if result.get("success"):
+            response = {
+                "success": True,
+                "clicked": ref
+            }
+            return json.dumps(_copy_fallback_warning(response, result), ensure_ascii=False)
+        else:
+            response = {
+                "success": False,
+                "error": result.get("error", f"Failed to click {ref}")
+            }
+            return json.dumps(_copy_fallback_warning(response, result), ensure_ascii=False)
+
+    # Chrome: both steps in ONE CLI invocation. Process launch is ~264 ms of the
+    # ~550 ms this pair cost as two calls, and it is paid once per invocation.
+    #
+    # No --bail: the click must still be attempted when the scroll fails, and
+    # the CLI's default is to continue after an error.
+    # No wait: the action → observation semantics stay "act, then look once".
+    batch_payload = json.dumps([["scrollintoview", ref], ["click", ref]])
+    try:
+        batch_result = _run_browser_command(
+            effective_task_id, "batch", [], stdin_data=batch_payload, timeout=40
+        )
+    except Exception as exc:
+        logger.debug("browser_click: batch invocation failed for %s: %s", ref, exc)
+        batch_result = {}
+
+    items = (batch_result.get("data") or {}).get("results") or []
+
+    def _item_for(name: str) -> Optional[Dict[str, Any]]:
+        return next(
+            (
+                i for i in items
+                if isinstance(i, dict) and (i.get("command") or [None])[0] == name
+            ),
+            None,
+        )
+
+    # The scroll is best-effort: report it, never act on it.
+    scroll_result = _item_for("scrollintoview")
+    if scroll_result is not None and not scroll_result.get("success"):
+        logger.debug(
+            "browser_click: scrollintoview failed for %s: %s",
+            ref, scroll_result.get("error"),
+        )
+
+    # The CLICK is the sole authority. A scroll success must never turn a click
+    # failure into a success, and a scroll failure must never mask a real click.
+    result = _item_for("click")
+    if result is None:
+        # The batch produced no click result at all — never report success.
+        result = {"success": False, "error": f"Failed to click {ref}"}
 
     if result.get("success"):
         response = {

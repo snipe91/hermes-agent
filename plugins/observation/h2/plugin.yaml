@@ -1,0 +1,11 @@
+name: observation-h2
+version: 0.1.0
+description: "Hermes 2.0 action observation harness. Registers a tool_execution middleware that observes browser_click around the existing execution, records decisions in a ledger, and measures H2.0 overhead separately from action latency. Default mode is OFF; nothing is observed unless agent.browser_action_verification is set to 'observe' (or 'enforce'). Never alters a tool result."
+author: Steph
+# `standalone` is the only valid kind for a plugin that contributes its own
+# hooks/middleware. Valid kinds: standalone, backend, exclusive, platform,
+# model-provider. Anything else is silently downgraded to standalone.
+# Standalone plugins are OPT-IN via `plugins.enabled` in ~/.hermes/config.yaml.
+kind: standalone
+# Note: `provides` is not a recognized manifest key — registration happens in
+# __init__.py:register(ctx) via ctx.register_middleware(...).

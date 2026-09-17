@@ -58,11 +58,12 @@ Le trafic SEO ne sert à rien s'il n'est pas capté et relancé :
 ### B. Relance Automatique (Workflow CRM + n8n)
 * **Emailing automatisé :** Séquence d'accueil (Welcome sequence) en 3 à 5 emails répondant à chaque objection client :
   1. *Email 1 (Immédiat)* : Livraison du diagnostic / valeur promise.
-  2. *Email 2 (J+2)* : Pourquoi la non-conformité coûte plus cher qu'un forfait (arguments factuels, pas d'alarmisme).
-  3. *Email 3 (J+4)* : La solution du paiement en 12 mensualités sans impact sur la trésorerie.
-  4. *Email 4 (J+7)* : Étude de cas / retour d'expérience avant-après.
+  2. *Email 2 (J+2)* : Pourquoi un site invisible et non conforme coûte plus cher qu'un forfait (factuel, pas d'alarmisme).
+  3. *Email 3 (J+4)* : La solution du paiement en 12 mensualités pour étaler la dépense.
+  4. *Email 4 (J+7)* : Étude de cas concrète / retour d'expérience avant-après.
+  * **Arrêt immédiat** : La séquence n8n doit obligatoirement s'arrêter ou pivoter dès qu'un prospect répond, prend rendez-vous, commande ou demande sa désinscription.
 * **Séquence de Réactivation pour Leads Froids (> 90 jours) :**
-  - Prévoyez une campagne de relance étalée sur 6 mois.
+  - Campagne de relance ciblée sur les besoins saisonniers ou mises à jour légales.
   - Séquence de **6 emails ciblés** avec des offres progressives (ex: audit approfondi offert, remise sur refonte, diagnostic Loi 25 d'urgence).
 
 ---
@@ -87,7 +88,9 @@ Ne pas dépendre uniquement du SEO Google standard :
 
 ## 4. Analyse, Ajustement & Amélioration Continue
 
-* **Suivi hebdomadaire :** Google Analytics 4 (taux d'engagement, conversions) et Search Console (impressions, clics, positions moyennes).
+* **Suivi des métriques réelles (pas de score d'outil abstrait) :**
+  - Google Analytics 4 : conversions réelles, passages de l'offre au paiement, prises de contact.
+  - Search Console : clics hors marque, requêtes de niche qualifiées, statut d'indexation.
 * **Mise à jour régulière :** Ré-optimiser les pages existantes qui se positionnent entre la position 5 et 20 pour les propulser dans le Top 3.
 * **Veille concurrentielle :** Analyser les nouveaux contenus publiés par les concurrents du secteur et combler les lacunes sémantiques.
 
@@ -97,3 +100,16 @@ Ne pas dépendre uniquement du SEO Google standard :
 
 * **Automatiser tout ce qui peut l'être :** Workflows n8n, triggers webhooks, génération de carrousels via Gemini, classification de leads.
 * **Exploitation des LLM par Hermes :** Utiliser les modèles (Claude, Gemini, DeepSeek, GPT) avec les compétences spécialisées (`gemini-carousel`, `hook-generator`, `post-formatter`, `humanizer-blanco`) pour garantir une exécution rapide avec zéro défaut.
+
+---
+
+## 6. Gouvernance des 828 Pages Locales & Arbitrage par la Donnée
+
+* **Règle de gel des nouvelles créations** : Aucune nouvelle série de pages métiers × villes n'est déployée sans preuve d'une intention de recherche distincte, d'un contenu à forte valeur ajoutée et d'un plan de maillage interne bidirectionnel.
+* **Maillage fluide et non unilatéral** :
+  - Prestation $\leftrightarrow$ Page métier $\leftrightarrow$ Pages locales pertinentes $\to$ Réalisation / Devis.
+  - Les pages piliers doivent également pointer vers les pages locales représentatives (pas de maillage ascendant strict à sens unique).
+* **Protocole de consolidation des pages proches** :
+  1. Comparer les requêtes réelles (Search Console) et le volume de trafic.
+  2. Si cannibalisation avérée : choisir l'URL dominante, fusionner les contenus utiles, et mettre en place une redirection 301 vers la page canonique.
+  3. Zéro désindexation massive ni redirection aveugle vers l'accueil.
